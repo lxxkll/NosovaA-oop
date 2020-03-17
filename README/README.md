@@ -93,7 +93,9 @@ interface RSubjectProps : RProps {
 
 interface RSubjectState : RState {
    var present: Array<Boolean>
-}```
+}
+```
+
 подняли состояние на уровень выше в предмет
 
 
