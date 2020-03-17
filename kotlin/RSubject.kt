@@ -12,7 +12,7 @@ import react.dom.ol
 interface RSubjectProps : RProps {
     var subject: Array<Subject>
     var listStudent :Array<Student>
-
+    var present: Array<Boolean>
 }
 
 
