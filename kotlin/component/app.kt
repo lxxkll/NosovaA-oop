@@ -30,22 +30,25 @@ class App : RComponent<AppProps, AppState>() {
     }
 
 
+    fun new_subject (): (String) -> Any = { new_subject ->
+        add_new_subject(new_subject)
+    }
+
+    fun add_new_subject (new_subject: String)
+    {
+        setState {
+            subject+= Subject(new_subject)
+            presents+= arrayOf(Array(props.students.size) { false })
+        }
+
+    }
+
 
 
     override fun RBuilder.render() {
         h1 { +"App" }
-        applesson(subjectList)
-        button{
-            +"Добавить предмет"
-            attrs.onClickFunction = {
-                setState {
-                    subject += Subject(newsubject)
-                    presents += arrayOf(
-                        Array(props.students.size){false}
-                    )
-                }
-            }
-        }
+        applesson(new_subject())
+
         lessonListFull(
             state.subject,
             props.students,
