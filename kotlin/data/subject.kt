@@ -9,6 +9,9 @@ data class Subject(
 
 
 val subjectList =
-    arrayListOf(
-        Subject ("Объектно-ориентированное программирование")
+    arrayOf(
+        Subject ("Объектно-ориентированное программирование"),
+        Subject("Технологии обработки информации"),
+        Subject("Электротехника")
+
     )

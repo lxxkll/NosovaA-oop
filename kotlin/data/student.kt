@@ -1,6 +1,6 @@
 package data
 
-import kotlin.browser.document
+
 
 
 data class Student(
@@ -11,7 +11,7 @@ data class Student(
 
 
 val studentList =
-    arrayListOf(
+    arrayOf(
         Student ("Носова" , "Анна"),
         Student ( "Дёмина", "Анастасия"),
         Student("Буйволова","Екатерина")
