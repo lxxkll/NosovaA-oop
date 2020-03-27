@@ -28,8 +28,6 @@ class App : RComponent<AppProps, AppState>() {
         }
 
     }
-
-
     fun new_subject (): (String) -> Any = { new_subject ->
         add_new_subject(new_subject)
     }
@@ -48,7 +46,6 @@ class App : RComponent<AppProps, AppState>() {
     override fun RBuilder.render() {
         h1 { +"App" }
         applesson(new_subject())
-
         lessonListFull(
             state.subject,
             props.students,

@@ -8,20 +8,6 @@ import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import org.w3c.dom.HTMLInputElement
-import react.*
-import react.dom.*
-import kotlin.browser.document
-
-package component
-
-import data.Student
-import data.Subject
-import data.subjectList
-import kotlinx.html.ButtonType
-import kotlinx.html.InputType
-import kotlinx.html.js.onChangeFunction
-import kotlinx.html.js.onClickFunction
-import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.events.Event
 import react.*
 import react.dom.*
@@ -53,7 +39,7 @@ class AppLessons : RComponent<AppLessonProps, AppLessonState>() {
             }
             input(type = InputType.submit){
                 attrs.onClickFunction = {
-                    props.add_newsubject(state.newsubject)
+                    props.add_newsubject(state.newsubject) // записываем считаное слово в св-ва
                 }
             }
 
