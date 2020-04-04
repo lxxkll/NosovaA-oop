@@ -40,7 +40,7 @@ class App : RComponent<AppProps, AppState>() {
 
     override fun RBuilder.render() {
         h1 { +"App" }
-        applesson(new_subject())
+        addlesson(new_subject())
         lessonListFull(
             state.subject,
             props.students,
