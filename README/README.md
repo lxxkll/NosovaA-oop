@@ -1,6 +1,6 @@
 Создаем новый компонент addLessons в котором создаем две кнопки:
  <ol>
- <li> Создаем кнопку input типа text в которой будем прописывать название. 
+ <li> Создаем  input типа text в которой будем прописывать название. 
  <p>"Вытаскиваем" значение которое мы ввели и помещаем его в глобальную перемееную </p> </li> 
 <li> Создаем кнопку "Отправить" которая отвечает за добавление слова в созданную в св-ах переменную</li> 
 </ol>
@@ -25,59 +25,62 @@ interface AppLessonProps : RProps {
     var newsubject: (String) -> Any
 }
 
-var add_newsubject: String = ""
+
 
 val addLessons =
     functionalComponent<AppLessonProps> { props ->
-
-
         div {
             h3 {
                 +"Введите название предмета"
-
             }
             input(type = InputType.text, name = "inp_1")
             {
-                attrs {
-                    onChangeFunction = {
-                        val a = it.target as HTMLInputElement
-                        add_newsubject = a.value
-                            //console.log(add_newsubject)
+                attrs.id = "subject"
+            }
+
+            input(type = InputType.submit, name = "inp_2") {
+                attrs.onClickFunction =
+                    {
+                        val subject = document.getElementById("subject")
+                                as HTMLInputElement
+                        val tmp = subject.value
+                        //console.log(tmp)
+                        props.newsubject(tmp)
                     }
                 }
             }
-
-            input(type = InputType.submit) {
-                attrs.onClickFunction =
-                    {
-                        props.newsubject (add_newsubject)
-                    }
-            }
         }
-    }
 
-fun RBuilder.applesson(
+
+
+fun RBuilder.addlesson(
      newsubject: (String) -> Any
 ) = child(addLessons){
     attrs.newsubject= newsubject
 }
+
 ```
 
- <p> Часть кода которая записывает в глобальную переменную add_newsubject слово которое мы ввели в поле </p>
+ <p> Часть кода которая находит id элемента, т.е id поля text, для дальнейшего "извлечения" слова </p>
 
 ``` kotlin
-onChangeFunction = {
- val a = it.target as HTMLInputElement
-add_newsubject = a.value
+ input(type = InputType.text, name = "inp_1")
+{
+ attrs.id = "subject"
+ }
 ```
 
- <p> Часть кода которая отвчеает за кнопку "Отправить", что бы мы могли добавить предмет в список  </p>
+ <p> Часть кода которая отвчеает за "Отправить", в которой мы записывем в переменную subject найденый элемент (т.е то что мы ввели в поле input типа text) и затем извлекаем занчение value. Часть props.newsubject(tmp) делает input активным для нажатия. </p>
 
 ```kotlin
- attrs.onClickFunction =
-{
-    props.newsubject (add_newsubject)
-}
+attrs.onClickFunction =
+   {
+ val subject = document.getElementById("subject")
+    as HTMLInputElement
+   val tmp = subject.value
+ //console.log(tmp)
+ props.newsubject(tmp)
+   }
 
 ```
 
