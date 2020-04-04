@@ -17,46 +17,35 @@ interface AppLessonProps : RProps {
     var newsubject: (String) -> Any
 }
 
-var add_newsubject: String = ""
+
 
 val addLessons =
     functionalComponent<AppLessonProps> { props ->
-
-
         div {
             h3 {
                 +"Введите название предмета"
-
             }
             input(type = InputType.text, name = "inp_1")
             {
-                attrs {
-                    onChangeFunction = {
-                        val a = it.target as HTMLInputElement
-                        add_newsubject = a.value
-                            //console.log(add_newsubject)
+                attrs.id = "subject"
+            }
+
+            input(type = InputType.submit, name = "inp_2") {
+                attrs.onClickFunction =
+                    {
+                        val subject = document.getElementById("subject")
+                                as HTMLInputElement
+                        val tmp = subject.value
+                        //console.log(tmp)
+                        props.newsubject(tmp)
                     }
                 }
             }
-
-            input(type = InputType.submit) {
-                attrs.onClickFunction =
-                    {
-                        props.newsubject (add_newsubject)
-
-                    }
-            }
         }
-    }
 
 
 
-
-
-
-
-
-fun RBuilder.applesson(
+fun RBuilder.addlesson(
      newsubject: (String) -> Any
 ) = child(addLessons){
     attrs.newsubject= newsubject
