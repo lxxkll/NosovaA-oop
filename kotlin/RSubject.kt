@@ -12,7 +12,7 @@ import react.dom.ol
 interface RSubjectProps : RProps {
     var subject: Array<Subject>
     var listStudent :Array<Student>
-    var present: Array<Boolean>
+    
 }
 
 
@@ -30,7 +30,7 @@ class RSubject : RComponent<RSubjectProps, RSubjectState>() {
     fun RBuilder.onIndex(): (Int) -> (Event) -> Unit = {
         onClick(it)
     }
-    override fun RBuilder.render() {
+    override fun RBuilder.render() { // Формируем предмет и список студентов к нему
                props.subject.map {
                    + it.name
                    ol {
@@ -54,5 +54,3 @@ fun RBuilder.rsubject(subject:  ArrayList<Subject> ) =
         attrs.subject = subject.toTypedArray()
         attrs.listStudent = studentList.toTypedArray()
     }
-
-
