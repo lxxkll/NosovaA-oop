@@ -1,0 +1,58 @@
+body {
+    background-color: white;
+    color: black;
+}
+
+.present {
+    font-weight: bold;
+}
+
+.absent {
+    font-style: italic;
+}
+
+input[type="text"] {
+    width: 300px;
+    font-size: 13px;
+    padding: 6px 0 4px 10px;
+    border: 1px solid #cecece;
+    background: #F6F6f6;
+    border-radius: 8px;
+}
+
+
+input[type="submit"]  {
+    cursor: pointer;
+    border: 1px solid #cecece;
+    background: #f6f6f6;
+    box-shadow: inset 0px 20px 20px #ffffff;
+    border-radius: 8px;
+    padding: 8px 14px;
+    width: 120px;
+}
+input[type="submit"] :hover {
+    box-shadow: inset 0px -20px 20px #ffffff;
+}
+input[type="submit"] :active {
+    margin-top: 1px;
+    margin-bottom: -1px;
+    zoom: 1;
+}
+
+input[type="reset"]  {
+    cursor: pointer;
+    border: 1px solid #cecece;
+    background: #f6f6f6;
+    box-shadow: inset 0px 20px 20px #ffffff;
+    border-radius: 8px;
+    padding: 8px 14px;
+    width: 120px;
+}
+input[type="reset"] :hover {
+    box-shadow: inset 0px -20px 20px #ffffff;
+}
+input[type="reset"] :active {
+    margin-top: 1px;
+    margin-bottom: -1px;
+    zoom: 1;
+}
