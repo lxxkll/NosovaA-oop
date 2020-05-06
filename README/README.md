@@ -1,143 +1,287 @@
-Добавили ранее созданый компонент AddLesson на отдельную страницу приложения , прописав маршрут к нему
+Переделали прошлую лаб.работу с использованием redux.
 
+Компоненты отвечающие за создания input для добавления и удаления студентов и общий компонент не изменились.
+
+Для того что бы начать работу мы перенесли все что было в сотсоянии из APP в отдельный компонент State
+
+```kotlin
+class State (
+    val presents: Array<Array<Boolean>>,
+    var lessons: Array<Lesson>,
+    var students: Array<Student>
+)
+```
+
+Далее в actions прописываем:
+
+```kotlin
+package redux
+class ChangePresent(val lesson: Int, val student: Int) : RAction
+class add_Student(val firstname:String, val surname: String): RAction
+class del_Student(val del_student: Int) : RAction
+class add_Lesson(val lesson: String): RAction
+class del_Lesson(val del_lesson: Int): RAction
+```
+
+Далее в reducers прописываем то что будет происходить при добавлении или удалении студентов и предметов.
+
+```kotlin
+fun changeReducer(state: State, action: RAction) =
+    when (action) {
+        is ChangePresent -> State(
+            state.presents.mapIndexed { indexLesson, lesson ->
+                if (indexLesson == action.lesson)
+                    lesson.mapIndexed { indexStudent, student ->
+                        if (indexStudent == action.student)
+                            !student
+                        else student
+                    }.toTypedArray()
+                else
+                    lesson
+            }.toTypedArray(),
+            state.lessons,
+            state.students
+        )
+
+        is add_Student ->State(
+            state.presents.mapIndexed{index,_ ->
+                state.presents[index].plus(arrayOf(false))
+            }
+                .toTypedArray(),
+            state.lessons,
+            state.students.plus(Student(action.firstname, action.surname))
+        )
+
+        is del_Student -> State(
+            state.presents.mapIndexed { index, _ ->
+                state.presents[index].toMutableList().apply {
+                    removeAt(action.del_student)
+                }.toTypedArray()
+            }.toTypedArray(),
+            state.lessons,
+            state.students.toMutableList().apply {
+                removeAt(action.del_student)
+            }.toTypedArray()
+        )
+
+        is add_Lesson -> State(
+            state.presents.plus(arrayOf(Array(state.students.size) { false })),
+            state.lessons.plus(Lesson(action.lesson)),
+            state.students
+        )
+
+        is del_Lesson -> State(
+            state.presents.toMutableList().apply {
+                removeAt(action.del_lesson)
+            }.toTypedArray(),
+            state.lessons.toMutableList().apply {
+                removeAt(action.del_lesson)
+            }.toTypedArray(),
+            state.students
+        )
+        else -> state
+    }
+```
+
+
+В компоненте APP прописываем пути для изменения студентов и предметов, функции добавления или удаления предметов и студентов.
 
 
 ```kotlin
-package component
-
-
-import data.*
-import kotlinx.html.js.onClickFunction
-import org.w3c.dom.events.Event
-import react.*
-import react.dom.*
-import react.router.dom.*
-
 
 interface AppProps : RProps {
-
-    var students: Array<Student>
+    var store: Store<State, RAction, WrapperAction>
 }
 
-interface AppState : RState {
-    var subject: Array<Subject>
-    var presents: Array<Array<Boolean>>
-}
 
 interface RouteNumberResult : RProps {
     var number: String
 }
 
-class App : RComponent<AppProps, AppState>() {
-    override fun componentWillMount() {
-        state.subject = subjectList
-        state.presents = Array(state.subject.size) {
-            Array(props.students.size) { false }
-        }
-    }
-
-    fun new_subject (): (String) -> Any = { new_subject ->
-        setState {
-            subject+= Subject(new_subject)
-            presents+= arrayOf(Array(props.students.size) { false })
-        }
-    }
-
-    override fun RBuilder.render() {
+fun fApp() =
+    functionalComponent<AppProps> { props ->
         header {
             h1 { +"App" }
             nav {
                 ul {
-                    li { navLink("/lessons") { +"Список предметов" } }
-                    li { navLink("/students") { +"Список студентов" } }
-                    li { navLink("/addLesson") { +"Добавить предмет" } }
+                    li { navLink("/lessons") { +"Lessons" } }
+                    li { navLink("/students") { +"Students" } }
+                    li { navLink("/changeLesson") { +"Изменение предмета" } }
+                    li { navLink("/changeStudent") { +"Изменение студента" } }
                 }
             }
         }
+
 
         switch {
             route("/lessons",
                 exact = true,
                 render = {
-                    subjectList(state.subject)
+                    anyList(props.store.getState().lessons, "Lessons", "/lessons")
                 }
             )
             route("/students",
                 exact = true,
                 render = {
-                    studentList(props.students)
-                } )
-            route("/addLesson",
-                exact = true,
-                render = {
-                    addlesson(new_subject())
+                    anyList(props.store.getState().students, "Students", "/students")
                 }
+            )
+            route(
+                "/changeLesson",
+               // exact = true,
+                render = change_Lesson(props)
+            )
+            route(
+                "/changeStudent",
+               // exact = true,
+                render = change_Student(props)
             )
             route("/lessons/:number",
-                render = { route_props: RouteResultProps<RouteNumberResult> ->
-                    val num = route_props.match.params.number.toIntOrNull() ?: -1
-                    val subject = state.subject.getOrNull(num)
-                    if (subject != null)
-                        lessonFull(
-                            subject,
-                            props.students,
-                            state.presents[num]
-                        ) { onClick(num, it) }
-                    else
-                        p { +"Нет такого предмета" }
-                }
+                render = renderLesson(props)
             )
             route("/students/:number",
-                render = { route_props: RouteResultProps<RouteNumberResult> ->
-                    val num = route_props.match.params.number.toIntOrNull() ?: -1
-                    val student = props.students.getOrNull(num)
-                    if (student != null)
-                        studentFull(
-                            state.subject,
-                            student,
-                            state.presents.map {
-                                it[num]
-                            }.toTypedArray()
-                        ) { onClick(it, num) }
-                    else
-                        p { +"Нет такого студента" }
-                }
+                render = renderStudent(props)
             )
         }
     }
 
-    fun onClick(indexLesson: Int, indexStudent: Int) =
-        { _: Event ->
-            setState {
-                presents[indexLesson][indexStudent] =
-                    !presents[indexLesson][indexStudent]
-            }
-        }
+
+fun AppProps.add_Student(): (Event) -> Unit ={
+    val nameObj = document.getElementById("student") as HTMLInputElement
+    val new_name = nameObj.value.split(" ")
+    store.dispatch(add_Student(new_name[0],new_name[1]))
 }
+
+fun AppProps.del_Student():(Event) -> Unit = {
+    val del = document.getElementById("student") as HTMLInputElement
+    store.dispatch(del_Student(del.value.toInt()-1))
+}
+
+fun AppProps.add_Lesson(): (Event) -> Unit = {
+    val add = document.getElementById("subject") as HTMLInputElement
+    store.dispatch(add_Lesson(add.value))
+}
+
+fun AppProps.del_Subject(): (Event) -> Unit = {
+    val del_s = document.getElementById("subject") as HTMLInputElement
+    store.dispatch(del_Lesson(del_s.value.toInt() - 1))
+}
+
+
+fun RBuilder.change_Lesson (props: AppProps): () -> ReactElement ={
+    Any_add_or_dell_Full(
+        RBuilder::addLessons,
+        RBuilder::anyList,
+        props.store.getState().lessons,
+        "Изменение урока",
+        "/lessons",
+        props.add_Lesson(),
+        props.del_Subject()
+
+    )
+}
+
+fun RBuilder.change_Student(props: AppProps): () -> ReactElement = {
+        Any_add_or_dell_Full(
+            RBuilder::addstudent,
+            RBuilder::anyList,
+            props.store.getState().students,
+            "Изменение студента",
+            "/students",
+            props.add_Student(),
+            props.del_Student()
+    )
+}
+
+
+fun AppProps.onClickStudent(num: Int): (Int) -> (Event) -> Unit =
+    { index ->
+        {
+            store.dispatch(ChangePresent(index, num))
+        }
+    }
+
+fun AppProps.onClickLesson(num: Int): (Int) -> (Event) -> Unit =
+    { index ->
+        {
+            store.dispatch(ChangePresent(num, index))
+        }
+    }
+
+fun RBuilder.renderLesson(props: AppProps) =
+    { route_props: RouteResultProps<RouteNumberResult> ->
+        val num = route_props.match.params.number.toIntOrNull() ?: -1
+        val lesson = props.store.getState().lessons.getOrNull(num)
+        if (lesson != null)
+            anyFull(
+                RBuilder::student,
+                lesson,
+                props.store.getState().students,
+                props.store.getState().presents[num],
+                props.onClickLesson(num)
+            )
+        else
+            p { +"No such lesson" }
+    }
+
+fun RBuilder.renderStudent(props: AppProps) =
+    { route_props: RouteResultProps<RouteNumberResult> ->
+        val num = route_props.match.params.number.toIntOrNull() ?: -1
+        val student = props.store.getState().students.getOrNull(num)
+        if (student != null)
+            anyFull(
+                RBuilder::lesson,
+                student,
+                props.store.getState().lessons,
+                props.store.getState().presents.map {
+                    it[num]
+                }.toTypedArray(),
+                props.onClickStudent(num)
+            )
+        else
+            p { +"No such student" }
+    }
+
 
 fun RBuilder.app(
-    students: Array<Student>
-) = child(App::class) {
-    attrs.students = students
+
+    store: Store<State, RAction, WrapperAction>
+) =
+    child(
+        withDisplayName("App", fApp())
+    ) {
+        attrs.store = store
+    }
+
+```
+
+
+Часть кода которая отвечае за удаление или добавление студента и предмета.
+
+Для того что бы удалить или добавить предмет мы находим элемент котороый ввели и затем при помощи вызова функции dispatch вносим изменения в хранилище
+
+```kotlin
+
+fun AppProps.add_Student(): (Event) -> Unit ={
+    val nameObj = document.getElementById("student") as HTMLInputElement
+    val new_name = nameObj.value.split(" ")
+    store.dispatch(add_Student(new_name[0],new_name[1]))
 }
-```
 
+fun AppProps.del_Student():(Event) -> Unit = {
+    val del = document.getElementById("student") as HTMLInputElement
+    store.dispatch(del_Student(del.value.toInt()-1))
+}
 
-Часть кода которая отвечает за переход между страницами 
+fun AppProps.add_Lesson(): (Event) -> Unit = {
+    val add = document.getElementById("subject") as HTMLInputElement
+    store.dispatch(add_Lesson(add.value))
+}
 
-```kotlin
-li { navLink("/addLesson") { +"Добавить предмет" } }
-```
-
-Часть кода отвечающая за отрисовку компонента "Добавить предмет"
-
-```kotlin
- route("/addLesson",
-  exact = true,
- render = {
-  addlesson(new_subject())
-   }
- )
+fun AppProps.del_Subject(): (Event) -> Unit = {
+    val del_s = document.getElementById("subject") as HTMLInputElement
+    store.dispatch(del_Lesson(del_s.value.toInt() - 1))
+}
 ```
 
 
