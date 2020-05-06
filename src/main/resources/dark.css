@@ -1,0 +1,12 @@
+a, body {
+
+    color: black;
+}
+
+.present {
+    font-weight: bold;
+}
+
+.absent {
+    font-style: italic;
+}
