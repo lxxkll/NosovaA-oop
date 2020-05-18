@@ -1,161 +1,188 @@
-Добавили ранее созданый компонент AddLesson на отдельную страницу приложения , прописав маршрут к нему
+По заданию было необходимо создать  фильтры, которые выводят либо всех студентов (уроки), либо только присутствующих, либо только отсутствующих
 
+
+Для этого был создан компонент filter
+
+```kotlin
+package data
+
+enum class VisibilityFilter {
+    SHOW_ALL,
+    SHOW_PRESENT,
+    SHOW_ABSENT
+}
+```
+
+В компонент State добавили visibilityFilter который по умолочанию показывает всех студентов или все предметы
+
+```kotlin 
+class State(
+    val lessons: LessonState,
+    val students: StudentState,
+    val presents: Presents,
+    val visibilityFilter: VisibilityFilter = VisibilityFilter.SHOW_ALL
+)
+```
+
+
+В  actions.kt было было прописано: 
+
+```kotlin
+class SetVisibilityFilter(val filter: VisibilityFilter) : RAction
+```
+
+В reducers.kt добавлено дейстивие
+
+```kotlin
+
+fun visibility(state: VisibilityFilter, action: RAction) =
+        when (action) {
+            is SetVisibilityFilter -> action.filter
+             else -> state
+}
+```
+
+Далее в anyFullContainer прописывем функцию видимости студентов. Аналогично действует видимость предметов.
+Для показа всех студентов(предметов) возвращается первоначальная сформированная карта. Если мы хотим проверить отсутсвующих или присутсвющих студентов на каком либо предмете, то формируется новая карта по условиям отсутсвия или присутсвия. Для просмотра предметов на которых присутсвовал студент, формируется карта по условиям присутсвия или отсутсвия на предмете.
+
+```kotlin
+private fun visibleStudents(
+        students: Map<Int, Student>,
+        presents: Map<Int, Boolean>?,
+        filter: VisibilityFilter
+): Map<Int, Student> = when(filter) {
+    VisibilityFilter.SHOW_ALL -> students
+    VisibilityFilter.SHOW_ABSENT -> {
+        val absentStudents = students.toMutableMap()
+        absentStudents.clear()
+        if (presents != null) {
+            presents.filter { !it.value }.map{
+                absentStudents[it.key] = students.getValue(it.key)
+            }
+        }
+        absentStudents
+    }
+    VisibilityFilter.SHOW_PRESENT -> {
+        val presentStudents = students.toMutableMap()
+        presentStudents.clear()
+        if (presents != null) {
+            presents.filter { it.value }.map{
+                presentStudents[it.key] = students.getValue(it.key)
+            }
+        }
+        presentStudents
+    }
+}
+
+private fun visibleLessons(
+        lessons: Map<Int, Lesson>,
+        presents: Map<Int, Boolean>?,
+        filter: VisibilityFilter
+): Map<Int, Lesson> = when (filter) {
+    VisibilityFilter.SHOW_ALL -> lessons
+    VisibilityFilter.SHOW_ABSENT -> {
+        val absentLesson = lessons.toMutableMap()
+        absentLesson.clear()
+        if (presents != null) {
+            presents.filter { !it.value }.map{
+                absentLesson[it.key] = lessons.getValue(it.key)
+            }
+        }
+        absentLesson
+    }
+    VisibilityFilter.SHOW_PRESENT -> {
+        val presentStudents = lessons.toMutableMap()
+        presentStudents.clear()
+        if (presents != null) {
+            presents.filter { it.value }.map{
+                presentStudents[it.key] = lessons.getValue(it.key)
+            }
+        }
+        presentStudents
+    }
+}
+```
+
+В filterContainer инициализируем state
 
 
 ```kotlin
-package component
-
-
-import data.*
-import kotlinx.html.js.onClickFunction
-import org.w3c.dom.events.Event
-import react.*
-import react.dom.*
-import react.router.dom.*
-
-
-interface AppProps : RProps {
-
-    var students: Array<Student>
+interface FilterLinkProps : RProps {
+    var filter: VisibilityFilter
 }
 
-interface AppState : RState {
-    var subject: Array<Subject>
-    var presents: Array<Array<Boolean>>
+private interface LinkStateProps : RProps {
+    var active: Boolean
 }
 
-interface RouteNumberResult : RProps {
-    var number: String
+private interface LinkDispatchProps : RProps {
+    var onClick: () -> Unit
 }
 
-class App : RComponent<AppProps, AppState>() {
-    override fun componentWillMount() {
-        state.subject = subjectList
-        state.presents = Array(state.subject.size) {
-            Array(props.students.size) { false }
+val filterLink: RClass<FilterLinkProps> =
+        rConnect<State, SetVisibilityFilter, WrapperAction, FilterLinkProps, LinkStateProps, LinkDispatchProps, LinkProps>(
+                { state, ownProps ->
+                    active = VisibilityFilter.SHOW_ALL == ownProps.filter
+                },
+                { dispatch, ownProps ->
+                    onClick = { dispatch(SetVisibilityFilter(ownProps.filter)) }
+                }
+        )(Link::class.js.unsafeCast<RClass<LinkProps>>())
+```
+
+Далее в  создаем кнопки для фильтра.
+
+```kotlin
+fun RBuilder.filter_() =
+        div {
+            span { +"Фильтр: " }
+            filterLink {
+                attrs.filter = VisibilityFilter.SHOW_ALL
+                +"Все"
+            }
+            filterLink {
+                attrs.filter = VisibilityFilter.SHOW_ABSENT
+                +"Отсутствует"
+            }
+            filterLink {
+                attrs.filter = VisibilityFilter.SHOW_PRESENT
+                +"Присутствует"
+            }
         }
-    }
+```
 
-    fun new_subject (): (String) -> Any = { new_subject ->
-        setState {
-            subject+= Subject(new_subject)
-            presents+= arrayOf(Array(props.students.size) { false })
-        }
-    }
+В filter визуализируем созданные кнопки
 
+```kotlin
+interface LinkProps : RProps {
+    var active: Boolean
+    var onClick: () -> Unit
+}
+
+class Link(props: LinkProps) : RComponent<LinkProps, RState>(props) {
     override fun RBuilder.render() {
-        header {
-            h1 { +"App" }
-            nav {
-                ul {
-                    li { navLink("/lessons") { +"Список предметов" } }
-                    li { navLink("/students") { +"Список студентов" } }
-                    li { navLink("/addLesson") { +"Добавить предмет" } }
-                }
-            }
-        }
-
-        switch {
-            route("/lessons",
-                exact = true,
-                render = {
-                    subjectList(state.subject)
-                }
-            )
-            route("/students",
-                exact = true,
-                render = {
-                    studentList(props.students)
-                } )
-            route("/addLesson",
-                exact = true,
-                render = {
-                    addlesson(new_subject())
-                }
-            )
-            route("/lessons/:number",
-                render = { route_props: RouteResultProps<RouteNumberResult> ->
-                    val num = route_props.match.params.number.toIntOrNull() ?: -1
-                    val subject = state.subject.getOrNull(num)
-                    if (subject != null)
-                        lessonFull(
-                            subject,
-                            props.students,
-                            state.presents[num]
-                        ) { onClick(num, it) }
-                    else
-                        p { +"Нет такого предмета" }
-                }
-            )
-            route("/students/:number",
-                render = { route_props: RouteResultProps<RouteNumberResult> ->
-                    val num = route_props.match.params.number.toIntOrNull() ?: -1
-                    val student = props.students.getOrNull(num)
-                    if (student != null)
-                        studentFull(
-                            state.subject,
-                            student,
-                            state.presents.map {
-                                it[num]
-                            }.toTypedArray()
-                        ) { onClick(it, num) }
-                    else
-                        p { +"Нет такого студента" }
-                }
-            )
+        button {
+            attrs.onClickFunction = { props.onClick() }
+            children()
         }
     }
-
-    fun onClick(indexLesson: Int, indexStudent: Int) =
-        { _: Event ->
-            setState {
-                presents[indexLesson][indexStudent] =
-                    !presents[indexLesson][indexStudent]
-            }
-        }
-}
-
-fun RBuilder.app(
-    students: Array<Student>
-) = child(App::class) {
-    attrs.students = students
 }
 ```
 
 
-Часть кода которая отвечает за переход между страницами 
+ <p> На рисунке 1 показана страница при изменении записи
 
-```kotlin
-li { navLink("/addLesson") { +"Добавить предмет" } }
-```
-
-Часть кода отвечающая за отрисовку компонента "Добавить предмет"
-
-```kotlin
- route("/addLesson",
-  exact = true,
- render = {
-  addlesson(new_subject())
-   }
- )
-```
-
-
- <p> На рисунке 1 показана страница при первом запуске
 
 
 <img src = 1.jpg>
 
-На рисунке 2 показана странница "Добавить предмет"
+На рисунке 2 показана странница на которой показан фильтр предметов на которых присутствовал студент или отсутствовал
 
 <img src = 2.jpg>
 
-На рисунке 3 показана страница с добавленным предметом
+На рисунке 3 показана страница на которой показан фильтр студентов которые присутсвовали или отсутсвовали на паре
 
 <img src = 3_1.jpg>
 
-На рисунке 4 показана страница со студентом который присутствует на новом предмете
 
-<img src = 3_2.jpg>
- </p>
 
